@@ -1,5 +1,13 @@
 FROM node:12-slim
 
+RUN apt-get install perl-base
+
+
+RUN addgroup --gid 1234 app && \
+    adduser --uid 1234 --gid 1234 --gecos "" --disabled-password app
+
+# https://github.com/krallin/tini/pull/188/files
+
 # grab tini for signal processing and zombie killing
 ENV TINI_VERSION 0.9.0
 RUN set -x \
@@ -9,7 +17,7 @@ RUN set -x \
 	&& curl -fSL "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini" -o /usr/local/bin/tini \
 	&& curl -fSL "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini.asc" -o /usr/local/bin/tini.asc \
 	&& export GNUPGHOME="$(mktemp -d)" \
-	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 6380DC428747F6C393FEACA59A84159D7001A4E5 \
+	&& gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7 \
 	&& gpg --batch --verify /usr/local/bin/tini.asc /usr/local/bin/tini \
 	&& rm -r "$GNUPGHOME" /usr/local/bin/tini.asc \
 	&& chmod +x /usr/local/bin/tini \
@@ -47,5 +55,6 @@ RUN set -x \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN npm run build
-
+USER app
 CMD ["tini", "--", "npm", "start"]
+
